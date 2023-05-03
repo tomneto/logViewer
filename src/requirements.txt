@@ -1,0 +1,7 @@
+PyQt5
+python-dotenv
+more-itertools
+pyperclip
+numpy
+PyInstaller
+rumps

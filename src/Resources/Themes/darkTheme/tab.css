@@ -1,0 +1,60 @@
+QTabWidget::pane {
+    border-radius: 10px;
+    background-color: #F7F7F7;
+}
+
+QTabWidget::tab-bar {
+    alignment: center;
+    border-radius: 10px;
+}
+
+QTabBar::tab {
+    background-color: #7D8888;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border: 1px solid #C2C7CB;
+    min-width: 100px;
+    color: white;
+}
+
+
+QTabBar::tab:selected {
+    background-color: #4A8688;
+    border-color: #1ABC9C;
+}
+
+QTabBar::tab:hover {
+    background-color: #48aeb1;
+    border-color: #1ABC9C;
+}
+
+QTabWidget::tab:selected {
+    background-color: #2E5455;
+    border-color: #1ABC9C;
+}
+
+QTabWidget::tab-bar:top {
+    top: 1px;
+    border-bottom: 1px solid #C2C7CB;
+    color: #FFFFFF;
+}
+
+QTabWidget::tab-bar:bottom {
+    bottom: 1px;
+    border-top: 1px solid #C2C7CB;
+}
+
+QTabWidget::tab-bar:left {
+    right: 1px;
+    border-right: 1px solid #C2C7CB;
+}
+
+QTabWidget::tab-bar:right {
+    left: 1px;
+    border-left: 1px solid #C2C7CB;
+}
+
+#blankTab {
+    background-color: #14191A;
+}
+

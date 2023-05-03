@@ -1,0 +1,15 @@
+QFileDialog {
+    background-color: #1A1714;
+    color: white;
+}
+
+QFileDialog:QAbstractItemView {
+    background-color: #1A1714;
+
+}
+
+QFileDialog::QWidget {
+    background-color: #14191A;
+
+}
+

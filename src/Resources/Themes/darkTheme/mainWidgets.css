@@ -1,0 +1,85 @@
+QComboBox {
+    border-radius: 7px;
+    background-color: #797775;
+    color: black;
+}
+
+QComboBox::drop-down {
+    width: 25px;
+    border-top-right-radius: 7px;
+    border-bottom-right-radius: 7px;
+    background-color: #A8A7AC;
+    color: black;
+}
+
+QComboBox::down-arrow {
+    image: url("resources/arrows/down.png");
+    width: 15px;
+    height: 15px;
+}
+
+QLineInput {
+    border:none;
+    border-radius: 5px;
+}
+
+QLineInput:disabled {
+    background-color: transparent;
+    border-radius: 5px;
+}
+
+QLineInput:enabled {
+    background-color: white;
+    border-radius: 5px;
+}
+
+QLabel {
+    font-weight: bold;
+    color: white;
+    border-radius: 7px;
+}
+
+QMenuBar {
+    border-radius: 10px;
+}
+
+QScrollBar {
+    border-radius: 10px;
+}
+
+QScrollBar:vertical {
+    background-color: #3B3D3D; /* set the background color of the scrollbar */
+    border: none; /* remove the scrollbar border */
+    min-height: 25px;
+}
+
+QScrollBar::handle {
+    background-color: #4A8688; /* set the color of the scrollbar handle */
+    border-radius: 5px;
+}
+
+QScrollBar::handle:hover {
+    background-color: #2E5455; /* set the color of the scrollbar handle when hovered */
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    border: none; /* remove the scrollbar buttons */
+    height: 0; /* make the buttons disappear */
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background-color: transparent; /* make the scrollbar track transparent */
+}
+
+QScrollBar::add-line:horizontal,
+QScrollBar::sub-line:horizontal {
+    border: none; /* remove the scrollbar buttons */
+    height: 0; /* make the buttons disappear */
+}
+
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {
+    background-color: transparent; /* make the scrollbar track transparent */
+}

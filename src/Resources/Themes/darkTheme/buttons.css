@@ -1,0 +1,43 @@
+#newTemplateButton {
+  background-color: #A7FFA7;
+  color: black;
+  font-size: 12px;
+}
+
+#loadButton {
+  background-color: #C1FFE3;
+  color: black;
+  font-size: 12px;
+  image: url("/Volumes/Projetos/Git/Elemental/ElementalTools/SystemFiles/UserSettings/Themes/darkTheme/resources/arrows/down.png");
+}
+
+#addButton {
+  background-color: #A7FFA7;
+  color: black;
+  font-size: 12px;
+}
+
+#removeButton {
+  background-color: #FFA7A7;
+  color: black;
+  font-size: 12px;
+}
+
+#saveButton {
+  background-color: #DDFFC1;
+  color: black;
+  font-size: 12px;
+}
+
+#exportButton {
+  background-color: #2179FF;
+  color: white;
+  font-size: 12px;
+}
+
+#importButton {
+  background-color: #FFE3C1;
+  color: black;
+  font-size: 12px;
+}
+
