@@ -15,5 +15,7 @@ def standalone():
     app.processEvents()
     window = mainWindow()
     window.show()
-    app.exec()
+    sys.exit(app.exec())
+
+
 

@@ -4,7 +4,7 @@ import sys
 from src.Common.system import relativePath
 from src.Common.themes import applyTheme, loadFonts
 
-from PyQt5.QtWidgets import QStatusBar
+from PyQt5.QtWidgets import QStatusBar, QApplication
 
 from PyQt5.QtCore import QSize, Qt
 from PyQt5.QtGui import QKeySequence
@@ -34,15 +34,15 @@ class mainWindow(QMainWindow):
         self.setStatusBar(self.statusBar)
 
         # Set window properties
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        #self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         self.SettingsHandler.setValue('findTitle', 'Log Viewer - Finder')
         self.SettingsHandler.setValue('headerLabels', ['Log Content'])
         self.setWindowTitle(self.SettingsHandler.getValue('title'))
         self.setWindowSize()
         self.shortcuts()
         self.mainMenu()
-        self.titleBar = CustomTitleBar(self.menuBar, self)
-        self.setMenuWidget(self.titleBar)
+        #self.titleBar = CustomTitleBar(self.menuBar, self)
+        #self.setMenuWidget(self.titleBar)
 
         # Load Dock Widgets
         self.loadDockWidgets()
@@ -142,7 +142,7 @@ class mainWindow(QMainWindow):
                 if not self.isVisible():
                     self.show()
 
-                self.statusBar#.showMessage(f'Loading {self.selectedFile}')
+                self.statusBar.showMessage(f'Loading {self.selectedFile}')
                 self.SettingsHandler.setValue('processingModelsItems', True)
                 self.openLogFile(self.selectedFile)
                 self.SettingsHandler.setValue('processingModelsItems', False)
@@ -159,10 +159,14 @@ class mainWindow(QMainWindow):
             self.appendOpenFile(filepath)
             self.tab.openFile(filepath)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event=None):
+        print('closing')
         self.SettingsHandler.saveConfig()
-        self.destroy(True, True)
-        sys.exit(0)
+        self.tab.thread_pool.clear()
+        self.tab.destroy()
+        #self.destroy()
+        QApplication.quit()
+
 
     def appendOpenFile(self, file: str):
         currentOpenedFiles = self.SettingsHandler.getSessionValue('openFiles', [])

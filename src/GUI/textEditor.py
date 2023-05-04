@@ -1,9 +1,10 @@
+import os
 import sys
 from ctypes import Union
 from datetime import time, datetime
 
 import numpy as np
-from PyQt5.QtCore import Qt, QRect, QSize, QFile, QTextStream, QPoint
+from PyQt5.QtCore import Qt, QRect, QSize, QFile, QTextStream, QPoint, pyqtSlot
 from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QTextEdit
 from PyQt5.QtGui import QColor, QPainter, QTextFormat, QTextDocument, QTextOption, QTextBlockFormat, QTextBlock, \
     QTextCursor, QTextCharFormat
@@ -15,7 +16,7 @@ class QLineNumberArea(QWidget):
         self.codeEditor = editor
 
     def sizeHint(self):
-        return QSize(self.editor.lineNumberAreaWidth(), 0)
+        return QSize(self.codeEditor.lineNumberAreaWidth(), 0)
 
     def paintEvent(self, event):
         self.codeEditor.lineNumberAreaPaintEvent(event)
@@ -28,21 +29,29 @@ class QCodeEditor(QPlainTextEdit):
         self.setReadOnly(True)
         self.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
 
+        self.lineColor = QColor(Qt.gray).lighter(160)
+        self.textColor = QColor(Qt.black).lighter(160)
+
         self.defaultFormat = self.textCursor().blockFormat()
         self.defaultTextFormat = self.textCursor().charFormat()
 
         self.lineNumberArea = QLineNumberArea(self)
-        #self.document().blockCountChanged.connect(self.onBlockCountChanged)
+        self.document().blockCountChanged.connect(self.onBlockCountChanged)
 
-        #self.updateRequest.connect(self.updateLineNumberArea)
-        #self.updateLineNumberAreaWidth(0)
-
-        ##self.cursorPositionChanged.connect(self.highlightCurrentLine)
+        self.updateLineNumberAreaWidth(0)
+        self.cursorPositionChanged.connect(self.highlightCurrentLine)
 
         self.timestamp = datetime.now()
         self.timesThatTextChanged = 1
 
-        #self.textChanged.connect(self.textHook)
+        self.updateRequest.connect(self.updateLineNumberArea)
+
+
+
+
+        #self.textChanged.connect(self.resizeEvent)
+
+
 
     def textHook(self):
         if self.timesThatTextChanged > 0:
@@ -52,19 +61,18 @@ class QCodeEditor(QPlainTextEdit):
     def onBlockCountChanged(self, newBlockCount):
         self.count = newBlockCount
         self.applyBlockSeparators()
-        #self.updateLineNumberAreaWidth(0)
+        self.updateLineNumberAreaWidth(self.count)
         #for pattern in self.loadUserTemplate()['patterns']:
         #    self.highlightInEditor(pattern['pattern'], pattern['backgroundColorHex'], pattern['textColorHex'],
         #                           pattern['caseSensitive'], self.)
 
     def applyBlockSeparators(self):
         self.blockSeparator = "<hr>"
-        cursor = QTextCursor(self.document())
-        cursor.beginEditBlock()
-        cursor.movePosition(QTextCursor.Start)
-        while cursor.movePosition(QTextCursor.NextBlock):
-            cursor.insertHtml(self.blockSeparator)
-        cursor.endEditBlock()
+        self.textCursor().beginEditBlock()
+        self.textCursor().movePosition(QTextCursor.Start)
+        while self.textCursor().movePosition(QTextCursor.NextBlock):
+            self.textCursor().insertHtml(self.blockSeparator)
+        self.textCursor().endEditBlock()
 
     def lineNumberAreaWidth(self):
         digits = 1
@@ -77,41 +85,15 @@ class QCodeEditor(QPlainTextEdit):
 
     def updateLineNumberAreaWidth(self, _):
         self.document().setDocumentMargin(0)
-        self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
+        self.setViewportMargins(self.lineNumberAreaWidth()+10, 0, 0, 0)
 
     def updateLineNumberArea(self, rect, dy):
         if dy:
             self.lineNumberArea.scroll(0, dy)
-        else:
-            self.lineNumberArea.update(0, rect.y(), self.lineNumberArea.width(), rect.height())
-        if rect.contains(self.viewport().rect()):
-            self.updateLineNumberAreaWidth(0)
-
-
-    def updateContent(self, currentId: int, content):
-
-        content = content.readAll()
-
-        currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
-
-        try:
-            codeEditorCount = currentTabs[currentId]['codeEditorCount']
-            contentCount = codeEditorCount + len(content)
-
-            if contentCount > codeEditorCount:
-
-                if codeEditorCount == 0:
-                    self.document().setPlainText(content)
-                    #self.document().setPlainText(content)
-                    currentTabs[currentId]['codeEditorCount'] = len(content)
-                    return True
-                else:
-                    self.document().setPlainText(content)
-
-            self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
-
-        except:
-            return False
+        #else:
+        #    self.lineNumberArea.update(0, rect.y(), self.lineNumberArea.width(), rect.height())
+        #if rect.contains(self.viewport().rect()):
+        #    self.updateLineNumberAreaWidth(0)
 
     def finishedDocument(self):
         self.setDocument(self.document())
@@ -124,16 +106,16 @@ class QCodeEditor(QPlainTextEdit):
     def highlightCurrentLine(self):
         extraSelections = []
         selection = QTextEdit.ExtraSelection()
-        lineColor = QColor(Qt.gray).lighter(160)
-        textColor = QColor(Qt.black).lighter(160)
-        selection.format.setBackground(lineColor)
-        selection.format.setForeground(textColor)
+
+        selection.format.setBackground(self.lineColor)
+        selection.format.setForeground(self.textColor)
+
         selection.format.setProperty(QTextFormat.FullWidthSelection, False)
-        selection.cursor = QTextCursor(self.document())
-        selection.cursor.clearSelection()
+
+        self.textCursor().clearSelection()
         extraSelections.append(selection)
-        #if self.mainWindow.statusBar is not None:
-        #    self.mainWindow.statusBar.showMessage(f"Total Count: {self.document().blockCount()} - Selected Line: {selection.cursor.blockNumber()+1} - Selection Length: {abs(self.textCursor().selectionStart() - self.textCursor().selectionEnd())}")
+        if self.mainWindow.statusBar is not None:
+            self.mainWindow.statusBar.showMessage(f"Total Count: {self.document().blockCount()} - Selected Line: {self.textCursor().blockNumber()+1} - Selection Length: {abs(self.textCursor().selectionStart() - self.textCursor().selectionEnd())}")
         self.setExtraSelections(extraSelections)
 
     def lineNumberAreaPaintEvent(self, event):

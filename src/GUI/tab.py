@@ -2,7 +2,9 @@ import os.path
 import re
 from datetime import datetime
 
-from PyQt5.QtGui import QTextDocument, QTextCursor
+from PyQt5.QtCore import QThreadPool, pyqtSlot, QObject, pyqtSignal
+from PyQt5.QtGui import QTextDocument, QTextCursor, QCursor
+from PyQt5 import Qt
 from PyQt5.QtWidgets import QTabWidget, QWidget, QTabBar
 from . import textEditor
 from .. import Threads
@@ -11,9 +13,30 @@ class newTabDefinitions:
     def __init__(self, title):
         self.title = title
 
+class logOutput(QObject):
+    outputSignal = pyqtSignal()
+    def __init__(self, textEditor):
+        super(logOutput, self).__init__()
+        self.textEditor = textEditor
+
+    @pyqtSlot()
+    def appendText(self, text):
+        cursor = self.textEditor.textCursor()
+        cursor.movePosition(QTextCursor.End)
+        cursor.insertText(text + os.linesep)
+
+    @pyqtSlot()
+    def getTextLength(self):
+        try:
+            return len(str(self.textEditor.toPlainText()).replace("\n", ""))
+        except:
+            return 0
+
 class mainTab(QTabWidget):
     def __init__(self, *args, mainWindow):
         super().__init__()
+        self.thread_pool = QThreadPool.globalInstance()
+
         self.mainWindow = mainWindow
         self.setMovable(False)
         self.setTabsClosable(True)
@@ -44,17 +67,18 @@ class mainTab(QTabWidget):
             if currentPage != 0:
                 currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
                 
-                for each in currentTabs:
-                    if each['id'] != currentPage:
-                        if each['id'] != 0:
-                            currentTabs[each['id']]['thread'].stop()
+                #for each in currentTabs:
+                #    if each['id'] != currentPage:
+                #        if each['id'] != 0:
+                #            currentTabs[each['id']]['thread'].stop()
 
                 self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
-                currentTabs[currentPage]['thread'].watch(currentTabs[currentPage])
 
+                self.thread_pool.start(currentTabs[currentPage]['thread'])
                 self.mainWindow.findWidget.changeFocus(currentTabs[currentPage]['textEditor'])
 
                 self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
+
         except:
             raise Exception(f'Failed onChange to {currentPage}')
 
@@ -87,9 +111,13 @@ class mainTab(QTabWidget):
                 newPage['textEditor'] = widget
             else:
                 newPage['textEditor'] = textEditor.QCodeEditor(mainWindow=self.mainWindow)
-            newPage['thread'] = Threads.logReader(parent=self, index=currentId, file=file)
+
+            newPage['object'] = logOutput(newPage['textEditor'])
+            newPage['thread'] = Threads.logReader(obj=newPage['object'], parent=self, index=currentId, file=file)
+
 
             currentTabs.append(newPage)
+
             self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 
             self.showTab(currentId)
@@ -104,15 +132,18 @@ class mainTab(QTabWidget):
         if tabIndex != 0:
             self.mainWindow.statusBar.showMessage('')
             self.remove(tabIndex)
+        else:
+            return True
 
     def remove(self, tabIndex: int):
         currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
         currentOpenFiles = self.mainWindow.SettingsHandler.getSessionValue('openFiles', [])
         
-        currentTabs[tabIndex]['thread'].stop()
+        self.thread_pool.cancel(currentTabs[tabIndex]['thread'])
         currentTabs.remove(currentTabs[tabIndex])
         currentOpenFiles.remove(currentOpenFiles[tabIndex-1])
         self.removeTab(tabIndex)
 
         self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
         self.mainWindow.SettingsHandler.setSessionValue('openFiles', currentOpenFiles)
+
