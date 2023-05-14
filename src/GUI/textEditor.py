@@ -92,7 +92,6 @@ class QCodeEditor(QPlainTextEdit):
         self.textAppendThread.exit(0)
         self.initialize(text)
 
-
     # Text Editor Behaviour
 
     def textHook(self):

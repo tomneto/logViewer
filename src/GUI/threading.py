@@ -12,7 +12,6 @@ import psutil
 from PyQt5.QtCore import QThread, pyqtSignal, QFile, QTextStream, QObject, QRunnable, pyqtSlot
 from PyQt5.QtGui import QTextCursor
 
-
 class appendThread(QThread):
 	appendSignal = pyqtSignal(str)
 
@@ -28,7 +27,6 @@ class appendThread(QThread):
 	def appendText(self, text):
 		self.editor.moveCursor(QTextCursor.End)
 		self.editor.insertPlainText(text)
-
 
 class fileReader(QRunnable):
 
@@ -121,7 +119,6 @@ class fileReader(QRunnable):
 		self.buffer = int((1024 * 1024) * self.recommededBuffer)
 		print(f'Setting buffer size has changed: {self.buffer}')
 		print()
-
 
 class fileStreaming(QObject):
 	flush = pyqtSignal(str)
