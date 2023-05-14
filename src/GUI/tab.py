@@ -7,30 +7,12 @@ from PyQt5.QtGui import QTextDocument, QTextCursor, QCursor
 from PyQt5 import Qt
 from PyQt5.QtWidgets import QTabWidget, QWidget, QTabBar
 from . import textEditor
-from .. import Threads
 
 class newTabDefinitions:
     def __init__(self, title):
         self.title = title
 
-class logOutput(QObject):
-    outputSignal = pyqtSignal()
-    def __init__(self, textEditor):
-        super(logOutput, self).__init__()
-        self.textEditor = textEditor
 
-    @pyqtSlot()
-    def appendText(self, text):
-        cursor = self.textEditor.textCursor()
-        cursor.movePosition(QTextCursor.End)
-        cursor.insertText(text + os.linesep)
-
-    @pyqtSlot()
-    def getTextLength(self):
-        try:
-            return len(str(self.textEditor.toPlainText()).replace("\n", ""))
-        except:
-            return 0
 
 class mainTab(QTabWidget):
     def __init__(self, *args, mainWindow):
@@ -72,9 +54,12 @@ class mainTab(QTabWidget):
                 #        if each['id'] != 0:
                 #            currentTabs[each['id']]['thread'].stop()
 
+                print(f"Changing to tab {currentPage}")
+
                 self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
 
-                self.thread_pool.start(currentTabs[currentPage]['thread'])
+                self.thread_pool.start(currentTabs[currentPage]['textEditor'].thread)
+
                 self.mainWindow.findWidget.changeFocus(currentTabs[currentPage]['textEditor'])
 
                 self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
@@ -110,11 +95,8 @@ class mainTab(QTabWidget):
             if widget is not None:
                 newPage['textEditor'] = widget
             else:
-                newPage['textEditor'] = textEditor.QCodeEditor(mainWindow=self.mainWindow)
-
-            newPage['object'] = logOutput(newPage['textEditor'])
-            newPage['thread'] = Threads.logReader(obj=newPage['object'], parent=self, index=currentId, file=file)
-
+                print(f'Creating text editor')
+                newPage['textEditor'] = textEditor.QCodeEditor(mainWindow=self.mainWindow, index=currentId, file=file, pageData=newPage)
 
             currentTabs.append(newPage)
 
@@ -139,11 +121,10 @@ class mainTab(QTabWidget):
         currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
         currentOpenFiles = self.mainWindow.SettingsHandler.getSessionValue('openFiles', [])
         
-        self.thread_pool.cancel(currentTabs[tabIndex]['thread'])
+        self.thread_pool.cancel(currentTabs[tabIndex]['textEditor'].thread)
         currentTabs.remove(currentTabs[tabIndex])
         currentOpenFiles.remove(currentOpenFiles[tabIndex-1])
         self.removeTab(tabIndex)
 
         self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
         self.mainWindow.SettingsHandler.setSessionValue('openFiles', currentOpenFiles)
-

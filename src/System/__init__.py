@@ -1,5 +1,8 @@
 import os
 
+import psutil
+
+
 def relativePath(path):
     return os.path.join(os.path.dirname(__file__), path)
 
@@ -32,3 +35,7 @@ async def readFile(filename):
         content = file.read()
         file.close()
     return content
+
+
+availableRam = psutil.virtual_memory().total / (1024 ** 3)
+recommendedRam = (availableRam / 16) * 1024

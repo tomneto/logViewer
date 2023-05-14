@@ -1,13 +1,13 @@
-import os
-import sys
-from ctypes import Union
-from datetime import time, datetime
+from datetime import datetime
+from datetime import datetime
+from time import sleep
 
-import numpy as np
-from PyQt5.QtCore import Qt, QRect, QSize, QFile, QTextStream, QPoint, pyqtSlot
+from .threading import fileStreaming, appendThread, fileReader
+from PyQt5.QtCore import QRect, QSize
+from PyQt5.QtCore import QTimer, Qt
+from PyQt5.QtGui import QColor, QPainter, QTextFormat, QTextOption
+from PyQt5.QtGui import QTextDocument, QTextCursor
 from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QTextEdit
-from PyQt5.QtGui import QColor, QPainter, QTextFormat, QTextDocument, QTextOption, QTextBlockFormat, QTextBlock, \
-    QTextCursor, QTextCharFormat
 
 
 class QLineNumberArea(QWidget):
@@ -22,7 +22,10 @@ class QLineNumberArea(QWidget):
         self.codeEditor.lineNumberAreaPaintEvent(event)
 
 class QCodeEditor(QPlainTextEdit):
-    def __init__(self, mainWindow, parent=None):
+    processing = False
+
+    def __init__(self, mainWindow, index, file, pageData, parent=None):
+        print("Initializing QCodeEditor")
         super().__init__(parent)
         self.mainWindow = mainWindow
 
@@ -46,12 +49,51 @@ class QCodeEditor(QPlainTextEdit):
 
         self.updateRequest.connect(self.updateLineNumberArea)
 
+        print("Creating Editor Object")
+        self.object = fileStreaming(self)
+
+        print("Connecting to Initializing")
+        self.object.string.connect(self.initialize)
+
+        print("Connecting to Cleaning")
+        self.object.flush.connect(self.flush)
+
+        print("Creating Editor Thread")
+        self.thread = fileReader(obj=self.object, parent=self, index=index, file=file)
+
+        print("Starting Timer")
+        self.timer = QTimer()
+
+        self.timer.timeout.connect(lambda: self.onObjChange())
+
+        self.timer.start(2000)
+
+    # Text Editor Threading
+
+    def onObjChange(self):
+        text = self.object.text
+        if text and not self.processing:
+            self.processing = True
+            self.textAppendThread.appendText(text)
+            self.object.text = str()
+            self.processing = False
+
+    def appendText(self, text):
+        self.moveCursor(QTextCursor.End)
+        self.insertPlainText(text)
+
+    def initialize(self, text):
+        self.textAppendThread = appendThread(self, text)
+        self.textAppendThread.appendSignal.connect(self.appendText)
+        self.textAppendThread.start()
+
+    def flush(self, text):
+        self.setPlainText(str())
+        self.textAppendThread.exit(0)
+        self.initialize(text)
 
 
-
-        #self.textChanged.connect(self.resizeEvent)
-
-
+    # Text Editor Behaviour
 
     def textHook(self):
         if self.timesThatTextChanged > 0:
@@ -217,4 +259,3 @@ class QCodeEditor(QPlainTextEdit):
 
         self.setTextCursor(userCursorPosition)
         print(f'applyUserTemplate Timeout is {datetime.now() - startTimestamp}')
-
