@@ -136,9 +136,6 @@ class QCodeEditor(QPlainTextEdit):
         #if rect.contains(self.viewport().rect()):
         #    self.updateLineNumberAreaWidth(0)
 
-    def finishedDocument(self):
-        self.setDocument(self.document())
-
     def resizeEvent(self, event):
         super().resizeEvent(event)
         cr = self.contentsRect()

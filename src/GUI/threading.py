@@ -28,7 +28,7 @@ class appendThread(QThread):
 		self.editor.moveCursor(QTextCursor.End)
 		self.editor.insertPlainText(text)
 
-class fileReader(QRunnable):
+class fileReader(QThread):
 
 	def __init__(self, obj, parent, index, file):
 		super().__init__()
@@ -58,7 +58,6 @@ class fileReader(QRunnable):
 				print()
 				self.stream = self.readFile()
 				self.adaptiveBuffer()
-
 
 				print(f'Comparing File has Increasing : {self.readSize / 1000} > fileItself {self.fileSize / 1000}')
 				print(f'Comparing File has decreased : {self.readSize / 1000} < fileItself {self.fileSize / 1000}')
@@ -116,7 +115,7 @@ class fileReader(QRunnable):
 		print(f'Buffer size once was: {self.buffer}')
 		self.allocatedRam = psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
 		self.recommededBuffer = recommendedRam - self.allocatedRam
-		self.buffer = int((1024 * 1024) * self.recommededBuffer)
+		self.buffer = abs(int((1024 * 1024) * self.recommededBuffer))
 		print(f'Setting buffer size has changed: {self.buffer}')
 		print()
 
@@ -134,7 +133,6 @@ class fileStreaming(QObject):
 	@pyqtSlot()
 	def write(self, text):
 		self.text += text
-
 
 	@pyqtSlot()
 	def initialize(self, text):

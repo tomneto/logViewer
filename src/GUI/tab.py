@@ -56,16 +56,24 @@ class mainTab(QTabWidget):
 
                 print(f"Changing to tab {currentPage}")
 
-                self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
-
-                self.thread_pool.start(currentTabs[currentPage]['textEditor'].thread)
-
-                self.mainWindow.findWidget.changeFocus(currentTabs[currentPage]['textEditor'])
-
-                self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
+                self.changeFocus(currentTabs, currentPage)
 
         except:
             raise Exception(f'Failed onChange to {currentPage}')
+
+    def changeFocus(self, currentTabs, currentPage):
+        self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
+
+        currentTabs[currentPage]['textEditor'].thread.start()
+
+        for page in currentTabs:
+            if page['id'] > 0 and page['id'] != currentPage:
+                page['textEditor'].thread.wait()
+
+        self.mainWindow.findWidget.changeFocus(currentTabs[currentPage]['textEditor'])
+
+        self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
+
 
     def blankPage(self):
         blankWidget = QWidget()
@@ -121,7 +129,7 @@ class mainTab(QTabWidget):
         currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
         currentOpenFiles = self.mainWindow.SettingsHandler.getSessionValue('openFiles', [])
         
-        self.thread_pool.cancel(currentTabs[tabIndex]['textEditor'].thread)
+        currentTabs[tabIndex]['textEditor'].thread.quit()
         currentTabs.remove(currentTabs[tabIndex])
         currentOpenFiles.remove(currentOpenFiles[tabIndex-1])
         self.removeTab(tabIndex)
