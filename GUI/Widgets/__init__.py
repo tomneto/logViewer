@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pyperclip
 from PyQt5.QtCore import QRect, QSize, QThread
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtGui import QColor, QPainter, QTextFormat, QTextOption
@@ -36,10 +37,11 @@ class textEditor:
 			super().__init__(parent)
 			self.mainWindow = mainWindow
 			self.parent = parent
-			
+
 			self.thread = QThread()
 
 			self.thread.moveToThread(self.parent.thread)
+			self.thread.start()
 
 			self.setReadOnly(True)
 			self.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
@@ -67,34 +69,52 @@ class textEditor:
 
 			print("Creating Editor Thread")
 			self.fileReader = fileReader(obj=self.object, parent=self, index=index, file=file)
-			self.fileReader.fileHasChanged.connect(self.onObjChange)
 			self.fileReader.moveToThread(self.thread)
+
+			self.fileReader.fileHasChanged.connect(self.onObjChange)
 
 			self.timer = QTimer()
 			self.timer.timeout.connect(lambda: self.fileReader.objectMonitor())
 
 			self.updateLineNumberAreaWidth(0)
+
+
 		# Text Editor Threading
 		def onObjChange(self, hasChanged):
 			print(f"onObjChange {hasChanged}")
 			if hasChanged and not self.processing:
 				text = self.object.text
 				self.object.text = str()
-				self.processing = True
 				self.textAppendThread.appendText(text)
-				self.processing = False
+
+		def genHtml(self, text):
+			def getStyle(template, line):
+				pattern = [e for e in template['patterns'] if (e['caseSensitive'] and e['pattern'] in line) or (
+							not e['caseSensitive'] and e['pattern'].lower() in line.lower())]
+				if len(pattern) > 0:
+					for p in pattern:
+						try:
+							return p['style']
+						except:
+							return ''
+				else:
+					return ''
+
+			template = self.loadUserTemplate()
+
+			lines = text.splitlines()
+			html = ''
+			for line in lines:
+				html += f'<p style="{getStyle(template, line)}" >{line}</p>'
+
+			pyperclip.copy(html)
+			return html
 
 		def appendText(self, text):
 			if not self.processing:
 				self.processing = True
-				#doc = QTextDocument(self.document().toPlainText() + text)
-				#self.setDocument(doc)
-				self.selection = self.extraSelections()
-				self.cursorPosition = self.textCursor().position()
 				self.moveCursor(QTextCursor.End)
-				self.insertPlainText(text)
-				self.moveCursor(self.cursorPosition)
-				self.setExtraSelections(self.selection)
+				self.appendHtml(self.genHtml(text))
 				self.processing = False
 
 		def initialize(self, text):
@@ -130,13 +150,11 @@ class textEditor:
 				self.mainWindow.statusBar.showMessage(
 					f"Total Count: {self.document().blockCount()} - Selected Line: {self.textCursor().blockNumber() + 1} - Selection Length: {abs(self.textCursor().selectionStart() - self.textCursor().selectionEnd())}")
 			self.setExtraSelections(extraSelections)
+
 		def flush(self, text):
-			if not self.processing:
-				self.processing = True
-				self.setPlainText(str())
-				self.textAppendThread.exit(0)
-				self.initialize(text)
-				self.processing = False
+			self.setPlainText(str())
+			self.textAppendThread.exit(0)
+			self.initialize(text)
 
 		# Text Editor Behaviour
 		def textHook(self):
@@ -151,9 +169,6 @@ class textEditor:
 					self.lineNumberArea.scroll(0, dy)
 				self.processing = False
 				#else:
-			#	self.lineNumberArea.update(0, rect.y(), self.lineNumberArea.width(), rect.height())
-			#if rect.contains(self.viewport().rect()):
-			#	self.updateLineNumberAreaWidth(0)
 
 		def applyBlockSeparators(self):
 			self.blockSeparator = "<hr>"
@@ -166,12 +181,6 @@ class textEditor:
 		def updateLineNumberAreaWidth(self, _):
 			self.document().setDocumentMargin(0)
 			self.setViewportMargins(self.lineNumberAreaWidth() + 10, 0, 0, 0)
-
-
-
-		# for pattern in self.loadUserTemplate()['patterns']:
-		#    self.highlightInEditor(pattern['pattern'], pattern['backgroundColorHex'], pattern['textColorHex'],
-		#                           pattern['caseSensitive'], self.)
 
 		def lineNumberAreaWidth(self):
 			digits = 1
@@ -243,30 +252,6 @@ class textEditor:
 			else:
 				self.setWordWrapMode(QTextOption.WrapAnywhere)
 
-		def highlightInEditor(self, pattern: str, bgcolor: hex, fgcolor: hex, caseSensitive: bool, selection=None):
-			if selection is None:
-				selection = self.textCursor()
-			else:
-				pass
-
-			if caseSensitive:
-				find = self.find(pattern, QTextDocument.FindCaseSensitively)
-			else:
-				find = self.find(pattern)
-
-			if find:
-				textColor = QColor(fgcolor)
-				lineColor = QColor(bgcolor)
-				currentFormat = selection.blockFormat()
-				currentTextFormat = selection.charFormat()
-				currentFormat.setBackground(lineColor)
-				currentTextFormat.setForeground(textColor)
-				selection.setBlockFormat(currentFormat)
-				selection.setCharFormat(currentTextFormat)
-			else:
-				selection.setBlockFormat(self.defaultFormat)
-				selection.setCharFormat(self.defaultTextFormat)
-
 		def loadUserTemplate(self):
 			self.setDocument(self.document())
 			self.selectedTemplate = self.mainWindow.SettingsHandler.getValue('UserSelectedTemplate')
@@ -275,17 +260,3 @@ class textEditor:
 				if template['title'] == self.selectedTemplate:
 					self.userTemplate = template
 					return self.userTemplate
-
-		def applyUserTemplate(self):
-			self.loadUserTemplate()
-			self.setDocument(self.document())
-			userCursorPosition = self.textCursor()
-			startTimestamp = datetime.now()
-			for eachBlock in range(self.blockCount()):
-				for pattern in self.userTemplate['patterns']:
-					self.highlightInEditor(pattern['pattern'], pattern['backgroundColorHex'], pattern['textColorHex'],
-										   pattern['caseSensitive'])
-
-			self.setTextCursor(userCursorPosition)
-			print(f'applyUserTemplate Timeout is {datetime.now() - startTimestamp}')
-

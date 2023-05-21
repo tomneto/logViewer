@@ -145,7 +145,6 @@ class themeWidget(QDockWidget):
     def loadComboboxValues(self):
         self.nemTemplateTitle = str(self.titleValue.text())
 
-
         self.comboBox.clear()
         userTemplates = self.SettingsHandler.getValue('Templates', [])
         for theme in userTemplates:
@@ -211,6 +210,7 @@ class themeWidget(QDockWidget):
             template["patterns"].append({
                 "caseSensitive": True if caseSensitiveItem.checkState() else False,
                 "pattern": patternItem.text(),
+                "style": f"""color:{textColorHexItem.text().replace('"','')}; background-color:{backgroundColorHexItem.text().replace('"','')}""",
                 "backgroundColorHex": backgroundColorHexItem.text(),
                 "textColorHex": textColorHexItem.text(),
             })
@@ -227,7 +227,9 @@ class themeWidget(QDockWidget):
         try:
             currentTable = self.SettingsHandler.getValue('selectedTableId')
             if currentTable != 0 and currentTable is not None:
-                self.SettingsHandler.getObject('tabs')[currentTable]['textEditor'].applyUserTemplate()
+                print('Applying User Template')
+                print(self.SettingsHandler.getObject('tabs')[currentTable])
+                self.SettingsHandler.getObject('tabs')[currentTable]['textEditor'].fileReader.setReset()
         except:
             pass
     def exportTableValues(self):

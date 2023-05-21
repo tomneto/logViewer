@@ -42,7 +42,7 @@ class tabs(QTabWidget):
 		self.thread = QThread()
 		self.thread.start()
 
-		self.standby = QThread()
+
 	def newTabButton(self, tab):
 		if tab == 0:
 			self.showOpenFileDialog()
@@ -66,11 +66,12 @@ class tabs(QTabWidget):
 				for eachPage in currentTabs:
 					if eachPage['id'] > 0 and eachPage['id'] != currentPage:
 						print('Waiting')
-				# eachPage['textEditor'].fileReader.start()
-				# eachPage['textEditor'].thread.wait()
-				if self.thread.isRunning() and not currentTabs[currentPage]['textEditor'].fileReader.isRunning():
-					currentTabs[currentPage]['textEditor'].fileReader.start()
+						if eachPage['textEditor'].fileReader.isRunning(): eachPage['textEditor'].fileReader.exit(0)
 
+					elif eachPage['id'] > 0 and eachPage['id'] == currentPage and not eachPage['textEditor'].fileReader.isRunning():
+						print('Starting')
+						eachPage['textEditor'].fileReader.start()
+#
 				self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 				self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
 		except:
@@ -89,33 +90,6 @@ class tabs(QTabWidget):
 
 	def show(self):
 		self.mainWindow.setCentralWidget(self.mainWindow.tab)
-
-	def openFile(self, file: str, widget=None):
-		try:
-			currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
-
-			currentId = len(currentTabs)
-			newPage = dict()
-			newPage['id'] = currentId
-			newPage['file'] = file
-			newPage['parent'] = self
-			newPage['codeEditorCount'] = 0
-
-			if widget is not None:
-				newPage['textEditor'] = widget
-			else:
-				print(f'Creating text editor')
-				# newPage['threadPool'] = threadPool
-				newPage['textEditor'] = textEditor.QCodeEditor(mainWindow=self.mainWindow, index=currentId, file=file, pageData=newPage, parent=self)
-
-			currentTabs.append(newPage)
-
-			self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
-
-			self.showTab(currentId)
-
-		except:
-			pass
 
 	def showOpenFileDialog(self):
 		self.mainWindow.chooseLogFile()
@@ -141,6 +115,32 @@ class tabs(QTabWidget):
 
 		self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 		self.mainWindow.SettingsHandler.setSessionValue('openFiles', currentOpenFiles)
+
+	def openFile(self, file: str, widget=None):
+		try:
+			currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
+
+			currentId = len(currentTabs)
+			newPage = dict()
+			newPage['id'] = currentId
+			newPage['file'] = file
+			newPage['parent'] = self
+			newPage['codeEditorCount'] = 0
+
+			if widget is not None:
+				newPage['textEditor'] = widget
+			else:
+				print(f'Creating text editor')
+				newPage['textEditor'] = textEditor.QCodeEditor(mainWindow=self.mainWindow, index=currentId, file=file, pageData=newPage, parent=self)
+
+			currentTabs.append(newPage)
+
+			self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
+
+			self.showTab(currentId)
+
+		except:
+			pass
 
 class mainWindow(QMainWindow):
 
@@ -292,8 +292,15 @@ class mainWindow(QMainWindow):
 			return False
 
 	def openLogFile(self, filepath: str):
-		if filepath not in self.SettingsHandler.getSessionValue('openFiles', []):
-			self.appendOpenFile(filepath)
+		currentOpenedFiles = self.SettingsHandler.getSessionValue('openFiles', [])
+
+		if filepath not in currentOpenedFiles:
+			currentOpenedFiles.append(filepath)
+
+			self.SettingsHandler.setSessionValue('openFiles', currentOpenedFiles)
+			print(f'Currently Opened Files: %s' % currentOpenedFiles)
+			self.appendMenuRecentFile(filepath)
+
 			self.tab.openFile(filepath)
 
 	def closeEvent(self, event=None):
@@ -303,13 +310,6 @@ class mainWindow(QMainWindow):
 		self.tab.destroy()
 		# self.destroy()
 		QApplication.quit()
-
-	def appendOpenFile(self, file: str):
-		currentOpenedFiles = self.SettingsHandler.getSessionValue('openFiles', [])
-		currentOpenedFiles.append(file)
-		self.SettingsHandler.setSessionValue('openFiles', currentOpenedFiles)
-		print(f'Currently Opened Files: %s' % currentOpenedFiles)
-		self.appendMenuRecentFile(file)
 
 	def appendMenuRecentFile(self, file: str):
 		print(f'Currently Selected File: %s' % file)

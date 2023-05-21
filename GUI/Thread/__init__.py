@@ -5,6 +5,8 @@ from time import sleep
 
 import os
 
+import pandas as pd
+
 from PyQt5.QtWidgets import QTextEdit
 
 from System import recommendedRam
@@ -30,7 +32,7 @@ class appendTextThread(QThread):
 
 class fileReader(QThread):
 	fileHasChanged = pyqtSignal(bool)
-
+	reset = False
 	def __init__(self, obj, parent, index, file):
 		super().__init__()
 
@@ -52,16 +54,6 @@ class fileReader(QThread):
 
 		self.object = obj
 
-	def appendText(self, text):
-		# doc = QTextDocument(self.document().toPlainText() + text)
-		# self.setDocument(doc)
-		self.parent.selection = self.parent.extraSelections()
-		self.parent.cursorPosition = self.parent.textCursor().position()
-		self.parent.moveCursor(QTextCursor.End)
-		self.parent.insertPlainText(text)
-		self.parent.moveCursor(self.parent.cursorPosition)
-		self.parent.setExtraSelections(self.parent.selection)
-
 	def run(self):
 		self.chunkAbsIndex = list()
 
@@ -69,7 +61,7 @@ class fileReader(QThread):
 
 			self.fileSize = os.stat(self.file).st_size
 
-			if self.fileSize != self.readSize and self.fileSize != 0:
+			if (self.fileSize != self.readSize and self.fileSize != 0) or (self.reset == True):
 				self.stream = self.readFile()
 				self.adaptiveBuffer()
 
@@ -92,13 +84,15 @@ class fileReader(QThread):
 							self.object.pos = self.stream.pos()
 
 				# File has decreased:
-				elif self.fileSize < self.readSize:
+				elif self.fileSize < self.readSize or self.reset:
+					self.reset = False
 					while not self.stream.atEnd():
 						# Flush to clean QPlainTextEdit
 						if self.stream.pos() == 0:
 							print('Flushing')
 							text = self.stream.read(self.buffer)
 							self.object.pos = self.stream.pos()
+							print(text)
 							self.object.flushObject(text)
 
 						# Write changes
@@ -108,6 +102,7 @@ class fileReader(QThread):
 							self.object.pos = self.stream.pos()
 
 				print('File has been read successfully')
+
 				self.readSize = self.fileSize
 
 			else:
@@ -135,11 +130,18 @@ class fileReader(QThread):
 			self.parent.textCursor().insertHtml(self.parent.blockSeparator)
 		self.parent.textCursor().endEditBlock()
 
+
 	@pyqtSlot()
 	def objectMonitor(self):
 		if self.object.text and not self.parent.processing:
 			print("Object has Text" )
 			self.fileHasChanged.emit(True)
+
+
+	def setReset(self):
+		print('Resetting')
+		self.reset = True
+
 
 class fileStreaming(QObject):
 	flush = pyqtSignal(str)
@@ -148,12 +150,15 @@ class fileStreaming(QObject):
 	pos = 0
 	processing = False
 
+	textDataFrame = pd.DataFrame()
+
 	def __init__(self, parent):
 		super(fileStreaming, self).__init__()
 		self.parent = parent
 
 	@pyqtSlot()
 	def write(self, text):
+		self.textDataFrame
 		self.text += text
 
 	@pyqtSlot()
