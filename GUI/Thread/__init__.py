@@ -64,7 +64,6 @@ class fileReader(QThread):
 
 	def run(self):
 		self.chunkAbsIndex = list()
-		self.count = -1
 
 		while self.isRunning():
 
@@ -135,15 +134,6 @@ class fileReader(QThread):
 		while self.parent.textCursor().movePosition(QTextCursor.NextBlock):
 			self.parent.textCursor().insertHtml(self.parent.blockSeparator)
 		self.parent.textCursor().endEditBlock()
-
-	def onBlockCountChanged(self, newBlockCount):
-		self.parent.count = newBlockCount
-		self.applyBlockSeparators()
-		self.updateLineNumberAreaWidth(self.count)
-
-	def updateLineNumberAreaWidth(self, _):
-		self.parent.document().setDocumentMargin(0)
-		self.parent.setViewportMargins(self.parent.lineNumberAreaWidth() + 10, 0, 0, 0)
 
 	@pyqtSlot()
 	def objectMonitor(self):

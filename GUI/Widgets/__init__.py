@@ -17,7 +17,7 @@ from GUI.Thread import fileStreaming, appendTextThread, fileReader
 class textEditor:
 
 	class QCodeEditor(QPlainTextEdit):
-
+		count = -1
 		processing = False
 
 		class QLineNumberArea(QWidget):
@@ -73,7 +73,7 @@ class textEditor:
 			self.timer = QTimer()
 			self.timer.timeout.connect(lambda: self.fileReader.objectMonitor())
 
-			self.fileReader.updateLineNumberAreaWidth(0)
+			self.updateLineNumberAreaWidth(0)
 		# Text Editor Threading
 		def onObjChange(self, hasChanged):
 			print(f"onObjChange {hasChanged}")
@@ -104,11 +104,16 @@ class textEditor:
 				self.textAppendThread.moveToThread(self.thread)
 				self.textAppendThread.appendSignal.connect(self.appendText)
 				self.textAppendThread.start()
-				#self.updateRequest.connect(self.updateLineNumberArea)
-				#self.blockCountChanged.connect(self.fileReader.onBlockCountChanged)
-				#self.cursorPositionChanged.connect(self.highlightCurrentLine)
-				#self.timer.start(3000)
+				self.updateRequest.connect(self.updateLineNumberArea)
+				self.blockCountChanged.connect(self.onBlockCountChanged)
+				self.cursorPositionChanged.connect(self.highlightCurrentLine)
+				self.timer.start(3000)
 				self.processing = False
+
+		def onBlockCountChanged(self, newBlockCount):
+			self.parent.count = newBlockCount
+			self.applyBlockSeparators()
+			self.updateLineNumberAreaWidth(self.count)
 
 		def highlightCurrentLine(self):
 			extraSelections = []
@@ -150,17 +155,17 @@ class textEditor:
 			#if rect.contains(self.viewport().rect()):
 			#	self.updateLineNumberAreaWidth(0)
 
-		#def applyBlockSeparators(self):
-		#	self.blockSeparator = "<hr>"
-		#	self.textCursor().beginEditBlock()
-		#	self.textCursor().movePosition(QTextCursor.Start)
-		#	while self.textCursor().movePosition(QTextCursor.NextBlock):
-		#		self.textCursor().insertHtml(self.blockSeparator)
-		#	self.textCursor().endEditBlock()
+		def applyBlockSeparators(self):
+			self.blockSeparator = "<hr>"
+			self.textCursor().beginEditBlock()
+			self.textCursor().movePosition(QTextCursor.Start)
+			while self.textCursor().movePosition(QTextCursor.NextBlock):
+				self.textCursor().insertHtml(self.blockSeparator)
+			self.textCursor().endEditBlock()
 
-		#def updateLineNumberAreaWidth(self, _):
-		#	self.document().setDocumentMargin(0)
-		#	self.setViewportMargins(self.lineNumberAreaWidth() + 10, 0, 0, 0)
+		def updateLineNumberAreaWidth(self, _):
+			self.document().setDocumentMargin(0)
+			self.setViewportMargins(self.lineNumberAreaWidth() + 10, 0, 0, 0)
 
 
 

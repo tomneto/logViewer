@@ -35,7 +35,7 @@ class tabs(QTabWidget):
 		self.blankPage()
 
 		self.tabBarClicked.connect(self.newTabButton)
-		self.currentChanged.connect(self.onChange)
+		self.currentChanged.connect(self.changeTab)
 		self.setUpdatesEnabled(True)
 		self.tabCloseRequested.connect(self.onCloseEvent)
 
@@ -55,36 +55,26 @@ class tabs(QTabWidget):
 		self.setCurrentIndex(index)
 		self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 
-	def onChange(self, currentPage):
+	def changeTab(self, currentPage):
+		print('Change Tab')
 		try:
-			currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
 
 			if currentPage != 0:
-				self.changeFocus(currentTabs, currentPage)
 
+				currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
+
+				for eachPage in currentTabs:
+					if eachPage['id'] > 0 and eachPage['id'] != currentPage:
+						print('Waiting')
+				# eachPage['textEditor'].fileReader.start()
+				# eachPage['textEditor'].thread.wait()
+				if self.thread.isRunning() and not currentTabs[currentPage]['textEditor'].fileReader.isRunning():
+					currentTabs[currentPage]['textEditor'].fileReader.start()
+
+				self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
+				self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
 		except:
 			raise Exception(f'Failed onChange to {currentPage}')
-
-	def changeFocus(self, currentTabs, currentPage):
-		print('Change focus')
-		self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
-
-		for eachPage in currentTabs:
-			if eachPage['id'] > 0 and eachPage['id'] != currentPage:
-				print('Waiting')
-				eachPage['textEditor'].fileReader.moveToThread(self.standby)
-				#eachPage['textEditor'].thread.wait()
-
-		if self.thread.isRunning() and not currentTabs[currentPage]['textEditor'].fileReader.isRunning():
-			currentTabs[currentPage]['textEditor'].fileReader.start()
-		elif self.thread.isRunning() and currentTabs[currentPage]['textEditor'].fileReader.isRunning():
-			currentTabs[currentPage]['textEditor'].fileReader.moveToThread(self.thread)
-			print('fileReader Started')
-			#currentTabs[currentPage]['textEditor'].parent.thread.start()
-
-		self.mainWindow.findWidget.changeFocus(currentTabs[currentPage]['textEditor'])
-
-		self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 
 	def blankPage(self):
 		blankWidget = QWidget()
@@ -213,6 +203,7 @@ class mainWindow(QMainWindow):
 	def loadComponents(self):
 		self.tabIndex = self.SettingsHandler.getValue('tabIndex', 0)
 		self.tab = tabs(mainWindow=self)
+
 		self.setCentralWidget(self.tab)
 
 	def resizeEvent(self, event):
