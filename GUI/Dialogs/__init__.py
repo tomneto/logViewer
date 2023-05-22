@@ -4,10 +4,11 @@ import re
 from PyQt5.QtCore import QUrl, QDir
 from PyQt5.QtWidgets import QFileDialog
 
+from GUI import Popups
 from config import inputSpecs
 
-class openLogFileDialog(QFileDialog):
-    def __init__(self, *args, mainWindow, title='Choose your Destiny'):
+class openFileDialog(QFileDialog):
+    def __init__(self, *args, mainWindow, fileExt, title='Choose your Destiny'):
         super().__init__()
         self.validFiles = False
         self.mainWindow = mainWindow
@@ -25,8 +26,8 @@ class openLogFileDialog(QFileDialog):
             self.setAcceptMode(QFileDialog.AcceptOpen)
 
             # Get the selected file path
-            self.filesToCheck, _ = self.getOpenFileName(self.mainWindow, title, f"{self.mainWindow.SettingsHandler.getValue('lastSelectedFolder', '')}",
-                                                     "All Files (*);;Log Files (*.log)", options=self.options())
+            self.filesToCheck, _ = self.getOpenFileName(self.mainWindow, title, f"{self.mainWindow.SettingsHandler.getValue('latestOpenFileDir', '')}",
+                                                     fileExt, options=self.options())
 
     def checkFile(self, path):
         self.validFile = list()
@@ -53,9 +54,52 @@ class openLogFileDialog(QFileDialog):
             return None
         if self.checkFile(self.filesToCheck):
             print(f'Opening {self.filesToCheck}')
-            self.mainWindow.SettingsHandler.setValue('lastSelectedFolder', os.path.dirname(self.validFile[0]))
+            self.mainWindow.SettingsHandler.setValue('latestOpenFileDir', os.path.dirname(self.validFile[0]))
 
             if self.validFile[0]:
                 return self.validFile[0]
             else:
                 return False
+
+
+class saveFileDialog(QFileDialog):
+    def __init__(self, *args, mainWindow, content, fileExt:str, latestDirectory:str='', title='Choose your Destiny'):
+        super().__init__()
+        self.validFiles = False
+        self.mainWindow = mainWindow
+        self.fileExt = fileExt
+        self.content = content
+
+        if mainWindow:
+
+            # Enable the built-in dock widget
+            self.setOptions(QFileDialog.DontUseNativeDialog)
+
+            # Get the selected file path
+            self.filesToCheck, _ = self.getSaveFileName(None, caption=title, directory=latestDirectory,
+                                                     filter=f"{fileExt}", options=self.options())
+
+            requiredExt = re.sub(r'.*\((.*?)\)', r'\1', self.fileExt)
+
+            FileExt = os.path.splitext(self.filesToCheck)[-1].lower()
+
+            if requiredExt.replace('*', '') not in os.path.basename(self.filesToCheck): self.filesToCheck += requiredExt.replace('*', '')
+
+            self.overwrite = True
+
+            if self.overwrite:
+                self.saveFileContent()
+
+            else:
+                self.popup = Popups.default(mainWindow=self.mainWindow)
+                self.popup.error(title="Invalid File Extension",
+                                                         message="Please choose a valid file extension.")
+
+    def saveFileContent(self):
+        try:
+            os.makedirs(os.path.dirname(self.filesToCheck), exist_ok=True)
+            with open(self.filesToCheck, 'w') as storageFile:
+                storageFile.write(self.content)
+                self.success = True
+        except:
+            self.success = False

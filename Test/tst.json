@@ -1,0 +1,20 @@
+{
+  "patterns": [
+    {
+      "backgroundColorHex": "#ff000000",
+      "caseSensitive": false,
+      "pattern": "lorem",
+      "style": "color:#ff0433ff; background-color:#ff000000",
+      "textColorHex": "#ff0433ff"
+    },
+    {
+      "backgroundColorHex": "#fffffb00",
+      "caseSensitive": false,
+      "pattern": "Abc",
+      "style": "color:#ff000000; background-color:#fffffb00",
+      "textColorHex": "#ff000000"
+    }
+  ],
+  "private": true,
+  "title": "Banana"
+}

@@ -7,7 +7,7 @@ inputSpecs = {
 
 necessaryFiles = [
 	{
-		"title": "Themes",
+		"title": "appThemes",
 		"type": "folder",
 		"Path": "/User/"
 	},

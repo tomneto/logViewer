@@ -1,3 +1,4 @@
+import json
 import random
 
 from PyQt5.QtCore import Qt
@@ -7,13 +8,42 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QColor
 
+from GUI import Dialogs
+
+
 class themeTableWidget(QTableWidget):
+
+    def calculate_contrast_ratio(self, color1, color2):
+        # Relative luminance calculation for sRGB color space
+        def relative_luminance(color):
+            r, g, b, _ = color.getRgbF()
+            r = adjust_gamma(r)
+            g = adjust_gamma(g)
+            b = adjust_gamma(b)
+            return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+        # Gamma adjustment for sRGB color space
+        def adjust_gamma(value):
+            if value <= 0.03928:
+                return value / 12.92
+            else:
+                return ((value + 0.055) / 1.055) ** 2.4
+
+        # Calculate relative luminance for both colors
+        luminance1 = relative_luminance(color1)
+        luminance2 = relative_luminance(color2)
+
+        # Calculate contrast ratio
+        contrast_ratio = (luminance1 + 0.05) / (luminance2 + 0.05)
+        return contrast_ratio
 
     def __init__(self):
         super().__init__()
         self.setColumnCount(4)
         self.setHorizontalHeaderLabels(['Case Sensitive', 'Pattern', 'Background Color', 'Text Color'])
         self.rightClickMenu()
+
+        self.itemChanged.connect(self.adaptiveContrast)
 
     def removeItem(self):
         selected_rows = self.selectedIndexes()
@@ -29,6 +59,10 @@ class themeTableWidget(QTableWidget):
         remove_action.triggered.connect(self.removeItem)
         self.showRightClickMenu = QMenu(self)
         self.showRightClickMenu.addAction(remove_action)
+
+    def adaptiveContrast(self, item):
+        if self.calculate_contrast_ratio(item.background().color(), item.foreground().color()) > 5:
+            item.setForeground(item.foreground().color().darker())
 
 class themeWidget(QDockWidget):
     def __init__(self, settingsHandler, parent=None):
@@ -52,6 +86,7 @@ class themeWidget(QDockWidget):
         self.loadComboboxValues()
 
 
+
     def applyMainElements(self):
         self.themeLabel = QLabel("Theme: ")
 
@@ -66,17 +101,17 @@ class themeWidget(QDockWidget):
         self.comboBox.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.comboBox.currentTextChanged.connect(self.loadTableValues)
 
-        self.loadThemesButton = QPushButton()
+        self.loadThemesButton = QPushButton("Reload")
         self.loadThemesButton.setObjectName("loadButton")
         self.loadThemesButton.setMinimumSize(10, 10)
         self.loadThemesButton.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.loadThemesButton.clicked.connect(self.loadComboboxValues)
 
-        self.addButton = QPushButton("Add New Pattern")
+        self.addButton = QPushButton("+")
         self.addButton.setObjectName("addButton")
         self.addButton.clicked.connect(self.addRow)
 
-        self.removeButton = QPushButton("Remove Selected")
+        self.removeButton = QPushButton("-")
         self.removeButton.setObjectName("removeButton")
         self.removeButton.clicked.connect(self.table.removeItem)
 
@@ -91,7 +126,7 @@ class themeWidget(QDockWidget):
 
         self.importButton = QPushButton("Import Theme")
         self.importButton.setObjectName("importButton")
-        self.exportButton.clicked.connect(self.importTableValues)
+        self.importButton.clicked.connect(self.importTableValues)
 
         # Create layout
         self.mainLayout = QVBoxLayout()
@@ -166,18 +201,22 @@ class themeWidget(QDockWidget):
                     self.title = e["title"]
                     for rowIdx, rowData in enumerate(e["patterns"]):
                         self.table.setRowCount(rowIdx+1)
+
                         caseSensitiveItem = QTableWidgetItem()
                         caseSensitiveItem.setTextAlignment(Qt.AlignCenter)
                         caseSensitiveItem.setCheckState(2 if rowData["caseSensitive"] else 0)
                         caseSensitiveItem.setFlags(caseSensitiveItem.flags() & ~Qt.ItemIsEditable)
                         self.table.setItem(rowIdx, 0, caseSensitiveItem)
+
                         patternItem = QTableWidgetItem(rowData["pattern"])
                         patternItem.setTextAlignment(Qt.AlignCenter)
                         self.table.setItem(rowIdx, 1, patternItem)
+
                         backgroundColorHexItem = QTableWidgetItem(rowData["backgroundColorHex"])
                         backgroundColorHexItem.setBackground(QColor(rowData["backgroundColorHex"]))
                         backgroundColorHexItem.setTextAlignment(Qt.AlignCenter)
                         self.table.setItem(rowIdx, 2, backgroundColorHexItem)
+
                         textColorHexItem = QTableWidgetItem(rowData["textColorHex"])
                         textColorHexItem.setBackground(QColor(rowData["textColorHex"]))
                         textColorHexItem.setTextAlignment(Qt.AlignCenter)
@@ -196,6 +235,7 @@ class themeWidget(QDockWidget):
     def saveTableValues(self):
         self.title = str(self.titleValue.text())
         userTemplates = self.SettingsHandler.getValue('Templates', [])
+        print(userTemplates)
 
         template = dict()
         template["title"] = self.title
@@ -233,6 +273,11 @@ class themeWidget(QDockWidget):
         except:
             pass
     def exportTableValues(self):
+
+        userSelectedTemplate = [e for e in self.SettingsHandler.getValue('Templates', []) if e['title'] == self.SettingsHandler.getValue('UserSelectedTemplate', '')]
+        print(userSelectedTemplate)
+        Dialogs.saveFileDialog(mainWindow=self.parent, title='Choose Template Destination', fileExt='Template File (*.json)',
+                               content=json.dumps(userSelectedTemplate[0], indent=2), latestDirectory=f"{self.SettingsHandler.getValue('latestSaveFileDir', '')}")
         print('export')
 
     def importTableValues(self):
@@ -241,15 +286,15 @@ class themeWidget(QDockWidget):
     def showColorSelector(self, row, column):
         if column > 1:
             # Show color selector dialog and set selected color's hex value in "Color Hex" column
-            color_dialog = QColorDialog(self)
-            color_dialog.setOption(QColorDialog.ShowAlphaChannel, True)
+            colorDialog = QColorDialog(self)
+            colorDialog.setOption(QColorDialog.ShowAlphaChannel, True)
             current_color_hex = self.table.item(row, column).text()
             current_color = QColor(current_color_hex)
             if current_color.isValid():
-                color_dialog.setCurrentColor(current_color)
+                colorDialog.setCurrentColor(current_color)
 
-            if color_dialog.exec():
-                color = color_dialog.selectedColor()
+            if colorDialog.exec():
+                color = colorDialog.selectedColor()
                 hexColor = color.name(QColor.HexArgb)
                 self.table.setItem(row, column, QTableWidgetItem(hexColor))
                 backgroundColorHexItem = self.table.item(row, column)

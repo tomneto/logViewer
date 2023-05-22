@@ -1,0 +1,13 @@
+{
+  "patterns": [
+    {
+      "backgroundColorHex": "#ff000000",
+      "caseSensitive": false,
+      "pattern": "Lorem",
+      "style": "color:#fffffb00; background-color:#ff000000",
+      "textColorHex": "#fffffb00"
+    }
+  ],
+  "private": true,
+  "title": "Banana"
+}

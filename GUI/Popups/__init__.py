@@ -15,3 +15,15 @@ class default(QMessageBox):
         self.setStandardButtons(QMessageBox.Ok)
         return self.show
 
+    def askYesOrNo(self, message, title):
+        self.setIcon(self.Question)
+        self.setText(message)
+        self.setWindowTitle(title)
+        self.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        self.setDefaultButton(QMessageBox.No)
+        self.clicked = self.exec_()
+
+        if self.clicked == QMessageBox.Yes:
+            return True
+        else:
+            return False

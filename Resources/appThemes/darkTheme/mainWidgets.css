@@ -1,4 +1,5 @@
 QComboBox {
+    font-weight: bold;
     border-radius: 7px;
     background-color: #797775;
     color: black;
@@ -44,35 +45,35 @@ QMenuBar {
 }
 
 QScrollBar {
-    border-radius: 10px;
-    min-height: 25px;
-    min-width: 25px;
+    border-radius: 8px;
+    min-width:25px;
+    min-height:25px;
 }
 
 QScrollBar:vertical {
-    background-color: #3B3D3D; /* set the background color of the scrollbar */
-    border: none; /* remove the scrollbar border */
-    min-height: 25px;
+    background-color: #3B3D3D;
+    min-width: 25px;
 }
 
 QScrollBar::handle {
-    background-color: #4A8688; /* set the color of the scrollbar handle */
-    border-radius: 5px;
+    background-color: #4A8688;
+    border-radius: 8px;
+    min-height: 25px;
 }
 
 QScrollBar::handle:hover {
-    background-color: #2E5455; /* set the color of the scrollbar handle when hovered */
+    background-color: #2E5455;
 }
 
 QScrollBar::add-line:vertical,
 QScrollBar::sub-line:vertical {
-    border: none; /* remove the scrollbar buttons */
-    height: 0; /* make the buttons disappear */
+    border: none;
+    height: 0;
 }
 
 QScrollBar::add-page:vertical,
 QScrollBar::sub-page:vertical {
-    background-color: transparent; /* make the scrollbar track transparent */
+    background-color: transparent;
 }
 
 QScrollBar::add-line:horizontal,

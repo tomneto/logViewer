@@ -92,7 +92,6 @@ class fileReader(QThread):
 							print('Flushing')
 							text = self.stream.read(self.buffer)
 							self.object.pos = self.stream.pos()
-							print(text)
 							self.object.flushObject(text)
 
 						# Write changes

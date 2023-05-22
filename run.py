@@ -11,10 +11,12 @@ if __name__ == '__main__':
     try:
         appPath = os.path.join(sys.executable)
         resourcePath = os.path.join(os.path.dirname(__file__), 'Resources')
-        for eachFolder in os.listdir(resourcePath):
-            print('Creating symlinks for %s' % eachFolder)
-            os.symlink(src=os.path.join(resourcePath, eachFolder), dst=os.path.join(Path(appPath).parent.absolute(), eachFolder))
+        print(appPath)
+        standalone()
+        #for eachFolder in os.listdir(resourcePath):
+        #    print('Creating symlinks for %s' % eachFolder)
+        #    os.symlink(src=os.path.join(resourcePath, eachFolder), dst=os.path.join(Path(appPath).parent.absolute(), eachFolder))
     except:
         pass
 
-    standalone()
+    #standalone()

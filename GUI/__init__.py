@@ -4,9 +4,9 @@ import os.path
 from PyQt5.QtCore import QSize, QThread
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence
+from PyQt5.QtGui import QKeySequence, QPixmap
 from PyQt5.QtGui import QTextDocument
-from PyQt5.QtWidgets import QMainWindow, QShortcut, QAction
+from PyQt5.QtWidgets import QMainWindow, QShortcut, QAction, QPushButton, QSizePolicy, QRadioButton, QLabel
 from PyQt5.QtWidgets import QStatusBar, QApplication
 from PyQt5.QtWidgets import QTabWidget, QWidget, QTabBar
 
@@ -15,8 +15,8 @@ from System import relativePath
 
 from Themes import applyTheme, loadFonts
 
-from GUI import Popups
-from GUI.Dialogs import openLogFileDialog
+from GUI import Popups, custom
+from GUI.Dialogs import openFileDialog
 from GUI.DockedWidgets import findWidget, themeWidget
 from GUI.Widgets import textEditor
 
@@ -71,7 +71,10 @@ class tabs(QTabWidget):
 					elif eachPage['id'] > 0 and eachPage['id'] == currentPage and not eachPage['textEditor'].fileReader.isRunning():
 						print('Starting')
 						eachPage['textEditor'].fileReader.start()
-#
+						self.mainWindow.findWidget.changeFocus(eachPage['textEditor'])
+						if self.mainWindow.SettingsHandler.getValue('realtime', True):
+							eachPage['textEditor'].timer.start()
+
 				self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 				self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
 		except:
@@ -150,11 +153,26 @@ class mainWindow(QMainWindow):
 		# Initialize the main window
 		self.initialValues()
 
-		applyTheme(self, relativePath(os.path.join('Themes')), 'darkTheme')
-		loadFonts(relativePath(os.path.join('Fonts')))
+		applyTheme(self, relativePath(os.path.join('appThemes')), 'darkTheme')
+		loadFonts(os.path.join(relativePath('appThemes'), 'Fonts'))
 
 		self.SettingsHandler = socketOS('Log Viewer')
 		self.statusBar = QStatusBar()
+
+		if self.SettingsHandler.getValue('realtime', True):
+			self.togglePixmap = QPixmap(relativePath('appThemes/darkTheme/resources/toggle/on.png'))
+		else:
+			self.togglePixmap = QPixmap(relativePath('appThemes/darkTheme/resources/toggle/off.png'))
+
+		self.realtimeSlide = QLabel()
+		self.realtimeLabel = QLabel('Realtime Rendering: ')
+		self.realtimeSlide.setObjectName("realtimeRenderSlide")
+		self.realtimeSlide.setPixmap(self.togglePixmap)
+		self.realtimeSlide.mousePressEvent = self.toggleRealtime
+
+		self.statusBar.layout().addWidget(self.realtimeLabel)
+		self.statusBar.layout().addWidget(self.realtimeSlide)
+
 		self.setStatusBar(self.statusBar)
 
 		# Set window properties
@@ -174,9 +192,21 @@ class mainWindow(QMainWindow):
 		# Load Components
 		self.loadComponents()
 
+	def toggleRealtime(self, event):
+		if event.buttons() == Qt.LeftButton:
+			if self.SettingsHandler.getValue('realtime', True):
+				self.SettingsHandler.setValue('realtime', False)
+				[e['textEditor'].timer.stop() for e in self.SettingsHandler.getObject('tabs', []) if e['id'] > 0]
+				self.togglePixmap = QPixmap(relativePath('appThemes/darkTheme/resources/toggle/off.png'))
+				self.realtimeSlide.setPixmap(self.togglePixmap)
+			else:
+				self.SettingsHandler.setValue('realtime', True)
+				[e['textEditor'].timer.start() for e in self.SettingsHandler.getObject('tabs', []) if e['id'] > 0]
+				self.togglePixmap = QPixmap(relativePath('appThemes/darkTheme/resources/toggle/on.png'))
+				self.realtimeSlide.setPixmap(self.togglePixmap)
+
 	def error(self, code):
 		self.popup = Popups.default(mainWindow=self.mainWindow)
-
 		self.invalidExtension = self.popup.error(title="Invalid File Extension", message="Please choose a valid file.")
 
 	def initialValues(self):
@@ -196,11 +226,12 @@ class mainWindow(QMainWindow):
 		self.addDockWidget(Qt.TopDockWidgetArea, self.findWidget)
 		self.findWidget.hide()
 
-		self.themeWidget = themeWidget(self.SettingsHandler)
+		self.themeWidget = themeWidget(self.SettingsHandler, parent=self)
 		self.addDockWidget(Qt.LeftDockWidgetArea, self.themeWidget)
 		self.themeWidget.hide()
 
 	def loadComponents(self):
+
 		self.tabIndex = self.SettingsHandler.getValue('tabIndex', 0)
 		self.tab = tabs(mainWindow=self)
 
@@ -270,7 +301,7 @@ class mainWindow(QMainWindow):
 			if not self.isVisible():
 				self.setVisible(False)
 
-			self.selectedFile = openLogFileDialog(mainWindow=self).getSelectedFiles()
+			self.selectedFile = openFileDialog(mainWindow=self, fileExt="All Files (*);;Log Files (*.log)", title='Choose a Log File').getSelectedFiles()
 
 			if not self.selectedFile:
 				self.error(400)

@@ -127,7 +127,8 @@ class textEditor:
 				self.updateRequest.connect(self.updateLineNumberArea)
 				self.blockCountChanged.connect(self.onBlockCountChanged)
 				self.cursorPositionChanged.connect(self.highlightCurrentLine)
-				self.timer.start(3000)
+				#self.timer.start(3000)
+
 				self.processing = False
 
 		def onBlockCountChanged(self, newBlockCount):
@@ -139,8 +140,8 @@ class textEditor:
 			extraSelections = []
 			selection = QTextEdit.ExtraSelection()
 
-			selection.format.setBackground(self.lineColor)
-			selection.format.setForeground(self.textColor)
+			selection.format.setForeground(self.textColor.darker())
+			selection.format.setBackground(self.lineColor.darker())
 
 			selection.format.setProperty(QTextFormat.FullWidthSelection, False)
 
@@ -249,8 +250,12 @@ class textEditor:
 		def changeWordWrap(self):
 			if self.mainWindow.SettingsHandler.getValue('wordWrapState'):
 				self.setWordWrapMode(QTextOption.NoWrap)
+				self.lineNumberArea.scroll(self.horizontalScrollBar().sliderPosition(), self.verticalScrollBar().sliderPosition())
+
 			else:
-				self.setWordWrapMode(QTextOption.WrapAnywhere)
+				self.setWordWrapMode(QTextOption.WordWrap)
+				self.lineNumberArea.scroll(self.horizontalScrollBar().sliderPosition(), self.verticalScrollBar().sliderPosition())
+
 
 		def loadUserTemplate(self):
 			self.setDocument(self.document())
