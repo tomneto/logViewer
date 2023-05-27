@@ -1,5 +1,6 @@
 import os
 import os.path
+from datetime import datetime
 
 from PyQt5.QtCore import QSize, QThread
 from PyQt5.QtCore import QThreadPool
@@ -10,6 +11,7 @@ from PyQt5.QtWidgets import QMainWindow, QShortcut, QAction, QPushButton, QSizeP
 from PyQt5.QtWidgets import QStatusBar, QApplication
 from PyQt5.QtWidgets import QTabWidget, QWidget, QTabBar
 
+from GUI.Widgets.progress import LoadingWidget
 from System import socketOS
 from System import relativePath
 
@@ -48,12 +50,14 @@ class tabs(QTabWidget):
 			self.showOpenFileDialog()
 
 	def showTab(self, index):
+		print(f'Tab.showTab, initiate, %s' % datetime.now())
 		#appendTabThread(self, index).start()
 		currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
 		filename = os.path.basename(currentTabs[index]['file'])
 		self.addTab(currentTabs[index]['textEditor'], f'{filename}')
 		self.setCurrentIndex(index)
 		self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
+		print(f'Tab.showTab, finished, %s' % datetime.now())
 
 	def changeTab(self, currentPage):
 		print('Change Tab')
@@ -70,13 +74,19 @@ class tabs(QTabWidget):
 
 					elif eachPage['id'] > 0 and eachPage['id'] == currentPage and not eachPage['textEditor'].fileReader.isRunning():
 						print('Starting')
+						#tempWidget = self.mainWindow.takeCentralWidget()
+						#self.mainWindow.setCentralWidget(None)
+
 						eachPage['textEditor'].fileReader.start()
 						self.mainWindow.findWidget.changeFocus(eachPage['textEditor'])
+
 						if self.mainWindow.SettingsHandler.getValue('realtime', True):
 							eachPage['textEditor'].timer.start()
 
 				self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 				self.mainWindow.SettingsHandler.setValue('selectedTableId', currentPage)
+
+
 		except:
 			raise Exception(f'Failed onChange to {currentPage}')
 
@@ -86,10 +96,11 @@ class tabs(QTabWidget):
 
 		self.mainWindow.SettingsHandler.setObject('logViewerHome', blankWidget)
 
-		self.openFile('', blankWidget)
+		self.mainWindow.openFile('', blankWidget)
 
 		self.addTab(blankWidget, '+')
 		self.tabBar().setTabButton(0, QTabBar.LeftSide, None)
+		self.tabBar().setTabButton(0, QTabBar.RightSide, None)
 
 	def show(self):
 		self.mainWindow.setCentralWidget(self.mainWindow.tab)
@@ -118,32 +129,6 @@ class tabs(QTabWidget):
 
 		self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
 		self.mainWindow.SettingsHandler.setSessionValue('openFiles', currentOpenFiles)
-
-	def openFile(self, file: str, widget=None):
-		try:
-			currentTabs = self.mainWindow.SettingsHandler.getObject('tabs', [])
-
-			currentId = len(currentTabs)
-			newPage = dict()
-			newPage['id'] = currentId
-			newPage['file'] = file
-			newPage['parent'] = self
-			newPage['codeEditorCount'] = 0
-
-			if widget is not None:
-				newPage['textEditor'] = widget
-			else:
-				print(f'Creating text editor')
-				newPage['textEditor'] = textEditor.QCodeEditor(mainWindow=self.mainWindow, index=currentId, file=file, pageData=newPage, parent=self)
-
-			currentTabs.append(newPage)
-
-			self.mainWindow.SettingsHandler.setObject('tabs', currentTabs)
-
-			self.showTab(currentId)
-
-		except:
-			pass
 
 class mainWindow(QMainWindow):
 
@@ -192,6 +177,33 @@ class mainWindow(QMainWindow):
 		# Load Components
 		self.loadComponents()
 
+	def openFile(self, file: str, widget=None):
+		try:
+			currentTabs = self.SettingsHandler.getObject('tabs', [])
+
+			currentId = len(currentTabs)
+			newPage = dict()
+			newPage['id'] = currentId
+			newPage['file'] = file
+			newPage['parent'] = self
+			newPage['codeEditorCount'] = 0
+
+			if widget is not None:
+				newPage['textEditor'] = widget
+			else:
+				print(f'Creating text editor')
+				newPage['textEditor'] = textEditor.QCodeEditor(mainWindow=self, index=currentId, file=file, pageData=newPage, parent=self.tab)
+
+			currentTabs.append(newPage)
+
+			self.SettingsHandler.setObject('tabs', currentTabs)
+			print(f'mainWindow.openFile initial %s' % datetime.now())
+			self.tab.showTab(currentId)
+			print(f'mainWindow.openFile finished %s' % datetime.now())
+
+		except:
+			pass
+
 	def toggleRealtime(self, event):
 		if event.buttons() == Qt.LeftButton:
 			if self.SettingsHandler.getValue('realtime', True):
@@ -235,6 +247,7 @@ class mainWindow(QMainWindow):
 		self.tabIndex = self.SettingsHandler.getValue('tabIndex', 0)
 		self.tab = tabs(mainWindow=self)
 
+
 		self.setCentralWidget(self.tab)
 
 	def resizeEvent(self, event):
@@ -257,8 +270,8 @@ class mainWindow(QMainWindow):
 		self.recentFileMenu = fileMenu.addMenu('Open Recent')
 
 		if self.SettingsHandler.getValue('recentFiles'):
-			uniqueRencentFiles = set(self.SettingsHandler.getValue('recentFiles'))
-			for each in uniqueRencentFiles:
+			uniqueRecentFiles = set(self.SettingsHandler.getValue('recentFiles'))
+			for each in uniqueRecentFiles:
 				if os.path.isfile(each):
 					self.appendMenuRecentFile(each)
 				else:
@@ -332,7 +345,7 @@ class mainWindow(QMainWindow):
 			print(f'Currently Opened Files: %s' % currentOpenedFiles)
 			self.appendMenuRecentFile(filepath)
 
-			self.tab.openFile(filepath)
+			self.openFile(filepath)
 
 	def closeEvent(self, event=None):
 		print('closing')

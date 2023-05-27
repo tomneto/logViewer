@@ -1,4 +1,5 @@
 from datetime import datetime
+from time import sleep
 
 import pyperclip
 from PyQt5.QtCore import QRect, QSize, QThread
@@ -10,10 +11,8 @@ from PyQt5.QtWidgets import QWidget
 
 from GUI.Thread import fileStreaming, appendTextThread, fileReader
 
-
 #class lineNumberAreaResizer(QThread):
 #	def __init__(self)
-
 
 class textEditor:
 
@@ -107,18 +106,28 @@ class textEditor:
 			for line in lines:
 				html += f'<p style="{getStyle(template, line)}" >{line}</p>'
 
-			pyperclip.copy(html)
+			#pyperclip.copy(html)
 			return html
 
 		def appendText(self, text):
+
+			startTime = datetime.now()
+			print(f'QCodeEditor.appendText, initiate, %s' % startTime)
 			if not self.processing:
 				self.processing = True
 				self.moveCursor(QTextCursor.End)
 				self.appendHtml(self.genHtml(text))
+				#if not self.isVisible():
+				#	self.show()
 				self.processing = False
+				print(f'QCodeEditor.appendText, finished, %s' % datetime.now())
+				print(f'QCodeEditor.appendText, elapsed, %s' %  (datetime.now() - startTime))
+			#self.show()
 
 		def initialize(self, text):
+			print(f'QCodeEditor.initialize, initiate, %s' % datetime.now())
 			if not self.processing:
+
 				self.processing = True
 				self.textAppendThread = appendTextThread(self, text)
 				self.textAppendThread.moveToThread(self.thread)
@@ -127,9 +136,12 @@ class textEditor:
 				self.updateRequest.connect(self.updateLineNumberArea)
 				self.blockCountChanged.connect(self.onBlockCountChanged)
 				self.cursorPositionChanged.connect(self.highlightCurrentLine)
-				#self.timer.start(3000)
 
+				#self.timer.start(3000)
+				#self.show()
 				self.processing = False
+				print(f'QCodeEditor.initialize, finished, %s' % datetime.now())
+
 
 		def onBlockCountChanged(self, newBlockCount):
 			self.parent.count = newBlockCount
@@ -255,7 +267,6 @@ class textEditor:
 			else:
 				self.setWordWrapMode(QTextOption.WordWrap)
 				self.lineNumberArea.scroll(self.horizontalScrollBar().sliderPosition(), self.verticalScrollBar().sliderPosition())
-
 
 		def loadUserTemplate(self):
 			self.setDocument(self.document())

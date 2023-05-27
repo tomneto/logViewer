@@ -6,10 +6,9 @@ import platform
 from PyQt5.QtCore import QSettings
 
 availableRam = psutil.virtual_memory().total / (1024 ** 3)
-recommendedRam = (availableRam / 16) * 1024
+recommendedRam = (availableRam / 32) * 1024
 def osInfo():
 	return platform.system()
-
 
 class socketOS:
 	def __init__(self, applicationName):

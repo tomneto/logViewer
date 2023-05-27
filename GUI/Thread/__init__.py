@@ -24,11 +24,16 @@ class appendTextThread(QThread):
 		self.text = text
 
 	def run(self):
+		print(f'appendTextThread.run, initiate, %s' % datetime.now())
 		self.appendSignal.emit(self.text)
+		print(f'appendTextThread.run, finished, %s' % datetime.now())
 
 	def appendText(self, text):
 		#self.editor.moveCursor(QTextCursor.End)
+		print(f'appendTextThread.appendText, initiate, %s' % datetime.now())
 		self.editor.appendText(text)
+		print(f'appendTextThread.appendText, finished, %s' % datetime.now())
+
 
 class fileReader(QThread):
 	fileHasChanged = pyqtSignal(bool)
