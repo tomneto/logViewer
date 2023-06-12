@@ -130,15 +130,15 @@ class textEditor:
 
 				self.processing = True
 				self.textAppendThread = appendTextThread(self, text)
-				self.textAppendThread.moveToThread(self.thread)
-				self.textAppendThread.appendSignal.connect(self.appendText)
-				self.textAppendThread.start()
+
+				self.textAppendThread.signal_holder.appendSignal.connect(self.appendText)
+				self.parent.thread_pool.start(self.textAppendThread)
 				self.updateRequest.connect(self.updateLineNumberArea)
 				self.blockCountChanged.connect(self.onBlockCountChanged)
 				self.cursorPositionChanged.connect(self.highlightCurrentLine)
 
-				#self.timer.start(3000)
-				#self.show()
+				self.timer.start(3000)
+				self.show()
 				self.processing = False
 				print(f'QCodeEditor.initialize, finished, %s' % datetime.now())
 
@@ -166,7 +166,9 @@ class textEditor:
 
 		def flush(self, text):
 			self.setPlainText(str())
-			self.textAppendThread.exit(0)
+			#self.textAppendThread.setAutoDelete(True)
+			#self.textAppendThread.deleteLater()
+			#self.parent.thread_pool.cancel(self.textAppendThread)
 			self.initialize(text)
 
 		# Text Editor Behaviour

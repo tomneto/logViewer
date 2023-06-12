@@ -5,7 +5,7 @@ from datetime import datetime
 from PyQt5.QtCore import QSize, QThread
 from PyQt5.QtCore import QThreadPool
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QKeySequence, QPixmap
+from PyQt5.QtGui import QKeySequence, QPixmap, QFont
 from PyQt5.QtGui import QTextDocument
 from PyQt5.QtWidgets import QMainWindow, QShortcut, QAction, QPushButton, QSizePolicy, QRadioButton, QLabel
 from PyQt5.QtWidgets import QStatusBar, QApplication
@@ -139,7 +139,13 @@ class mainWindow(QMainWindow):
 		self.initialValues()
 
 		applyTheme(self, relativePath(os.path.join('appThemes')), 'darkTheme')
-		loadFonts(os.path.join(relativePath('appThemes'), 'Fonts'))
+		fontFamilies = loadFonts(os.path.join(relativePath('appThemes'), 'Fonts'))
+
+		if fontFamilies:
+			fontFamily = fontFamilies[0]
+			print(f'Loading font family: {fontFamily}')
+			font = QFont(fontFamily, 12)  # Set font size
+			self.setFont(font)
 
 		self.SettingsHandler = socketOS('Log Viewer')
 		self.statusBar = QStatusBar()

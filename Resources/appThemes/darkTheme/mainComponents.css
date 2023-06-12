@@ -1,7 +1,7 @@
 QMainWindow {
     background-color: #1A1714;
-    font-family: "Inter";
     border-radius: 10px;
+
 }
 
 QStatusBar {
@@ -10,13 +10,19 @@ QStatusBar {
 }
 
 QPushButton {
-    background-color: black;
-    padding-left: 10px;
-    padding-right: 10px;
+    background-color: #7D8888;
+    padding-left: 5px;
+    padding-right: 5px;
     border: none;
-    border-radius: 7px;
-    color: white;
+    border-radius: 5px;
+    color: dark-gray;
     min-height: 25px;
+    min-width: 25px;
+}
+
+QPushButton::hover {
+    border: 2px solid #2E5455;
+    color: #2E5455;
 }
 
 QPlainTextEdit {

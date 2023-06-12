@@ -15,7 +15,10 @@ def applyTheme(parent, themePath, selectedTheme):
 	parent.setStyleSheet(style)
 
 def loadFonts(fontsPath):
+	fontFamilies = []
 	for font in os.listdir(fontsPath):
 		font_id = QFontDatabase.addApplicationFont(os.path.join(fontsPath, font))
 		if font_id != -1:
-			font_family = QFontDatabase.applicationFontFamilies(font_id)[0]
+			fontFamilies.append(QFontDatabase.applicationFontFamilies(font_id)[0])
+
+	return fontFamilies
