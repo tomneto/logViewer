@@ -43,6 +43,8 @@ class themeTableWidget(QTableWidget):
         self.setHorizontalHeaderLabels(['Case Sensitive', 'Pattern', 'Background Color', 'Text Color'])
         self.rightClickMenu()
 
+        self.horizontalHeader().setSectionsClickable(False)
+
         self.itemChanged.connect(self.adaptiveContrast)
 
     def removeItem(self):

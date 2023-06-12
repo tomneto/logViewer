@@ -2,7 +2,6 @@ import os
 
 from PyQt5.QtGui import QFontDatabase, QFont
 
-
 def applyTheme(parent, themePath, selectedTheme):
 	style = ''
 

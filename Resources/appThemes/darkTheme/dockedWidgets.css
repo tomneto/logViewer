@@ -1,0 +1,66 @@
+QTableWidget {
+    border-radius: 10px;
+    border: 1px solid #2E5455;
+}
+
+QTableWidget::header {
+    border-top-left-radius: 8px;
+}
+
+
+QTableWidget::horizontalHeader {
+    border-top-left-radius: 8px;
+}
+
+QHeaderView::section {
+                background-color: #8d8d8d;
+                color: #2E5455;
+                border: 1px solid black;
+            }
+
+QHeaderView::section:first {
+    border-top-left-radius: 8px;  /* Adjust the border radius value as desired */
+    border-bottom-left-radius: 8px;  /* Adjust the border radius value as desired */
+}
+
+QHeaderView::section:last {
+    border-top-right-radius: 8px;  /* Adjust the border radius value as desired */
+    border-bottom-right-radius: 8px;  /* Adjust the border radius value as desired */
+}
+
+#newTemplateButton {
+
+}
+
+#newTemplateButton::hover {
+
+}
+
+#loadButton {
+
+}
+
+#addButton {
+
+}
+
+#removeButton {
+
+}
+
+#saveButton {
+
+}
+
+#exportButton {
+
+}
+
+#importButton {
+
+}
+
+#newTemplateButton {
+
+}
+
